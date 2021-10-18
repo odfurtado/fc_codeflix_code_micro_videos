@@ -22,4 +22,18 @@ http://localhost:8000
 
 ## Apéndice
 
-Nosso aluno [Yuri Koster](https://github.com/yurikoster1) criou outra opção do repositório organizando melhor os arquivos Docker, se quiserem utilizar basta clonar o branch ```more_organized```.
+Nosso aluno [Yuri Koster](https://github.com/yurikoster1) criou outra opção do repositório organizando melhor os arquivos Docker, se quiserem utilizar basta clonar o branch `more_organized`.
+
+```bash
+  php artisan make:model Models/Category --all
+  php artisan migrate --seed
+
+  php artisan migrate:refresh --seed
+
+  php artisan make:request CategoryRequest
+
+
+
+
+  php artisan tinker
+```

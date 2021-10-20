@@ -25,4 +25,6 @@ http://localhost:8000
   php artisan migrate:refresh --seed
 
   php artisan tinker
+
+  php artisan make:test CategoryTest --unit
 ```

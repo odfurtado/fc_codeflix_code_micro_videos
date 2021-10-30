@@ -8,6 +8,8 @@ use Tests\TestCase;
 
 class GenreTest extends TestCase
 {
+    static $UUID_REGEX = "/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i";
+
     use DatabaseMigrations;
     /**
      * A basic feature test example.
@@ -18,10 +20,10 @@ class GenreTest extends TestCase
     {
         factory(Genre::class, 1)->create();
 
-        $categories = Genre::all();
+        $genres = Genre::all();
 
-        $this->assertCount(1, $categories);
-        $GenreKeys = array_keys($categories->first()->getAttributes());
+        $this->assertCount(1, $genres);
+        $GenreKeys = array_keys($genres->first()->getAttributes());
         $this->assertEqualsCanonicalizing(
             ['id', 'name', 'is_active', 'created_at', 'updated_at', 'deleted_at'],
             $GenreKeys
@@ -30,31 +32,32 @@ class GenreTest extends TestCase
 
     public function testCreate()
     {
-        $Genre = Genre::create([
+        $genre = Genre::create([
             'name' => 'test1'
         ]);
-        $Genre->refresh();
-        $this->assertEquals(36, strlen($Genre->id));
-        $this->assertEquals('test1', $Genre->name);
-        $this->assertTrue($Genre->is_active);
+        $genre->refresh();
+        $this->assertEquals(36, strlen($genre->id));
+        $this->assertTrue(boolval(preg_match(GenreTest::$UUID_REGEX, $genre->id)));
+        $this->assertEquals('test1', $genre->name);
+        $this->assertTrue($genre->is_active);
 
 
-        $Genre = Genre::create([
+        $genre = Genre::create([
             'name' => 'test1',
             'is_active' => false
         ]);
-        $this->assertFalse($Genre->is_active);
+        $this->assertFalse($genre->is_active);
 
-        $Genre = Genre::create([
+        $genre = Genre::create([
             'name' => 'test1',
             'is_active' => true
         ]);
-        $this->assertTrue($Genre->is_active);
+        $this->assertTrue($genre->is_active);
     }
 
     public function testUpdate()
     {
-        $Genre = factory(Genre::class)->create([
+        $genre = factory(Genre::class)->create([
             'is_active' => false
         ]);
 
@@ -62,22 +65,22 @@ class GenreTest extends TestCase
             'name' => 'test name updated',
             'is_active' => true
         ];
-        $Genre->update($data);
+        $genre->update($data);
 
         foreach ($data as $key => $value) {
-            $this->assertEquals($value, $Genre->{$key});
+            $this->assertEquals($value, $genre->{$key});
         }
     }
 
     public function testDelete()
     {
-        $Genre = factory(Genre::class)->create();
-        $this->assertNotNull(Genre::find($Genre->id));
+        $genre = factory(Genre::class)->create();
+        $this->assertNotNull(Genre::find($genre->id));
 
-        $Genre->delete();
-        $this->assertNull(Genre::find($Genre->id));
+        $genre->delete();
+        $this->assertNull(Genre::find($genre->id));
 
-        $Genre->restore();
-        $this->assertNotNull(Genre::find($Genre->id));
+        $genre->restore();
+        $this->assertNotNull(Genre::find($genre->id));
     }
 }

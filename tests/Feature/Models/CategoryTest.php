@@ -8,6 +8,8 @@ use Tests\TestCase;
 
 class CategoryTest extends TestCase
 {
+    static $UUID_REGEX = "/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i";
+
     use DatabaseMigrations;
     /**
      * A basic feature test example.
@@ -36,6 +38,7 @@ class CategoryTest extends TestCase
         ]);
         $category->refresh();
         $this->assertEquals(36, strlen($category->id));
+        $this->assertTrue(boolval(preg_match(CategoryTest::$UUID_REGEX, $category->id)));
         $this->assertEquals('test1', $category->name);
         $this->assertNull($category->description);
         $this->assertTrue($category->is_active);

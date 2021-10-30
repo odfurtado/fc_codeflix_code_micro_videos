@@ -27,4 +27,8 @@ http://localhost:8000
   php artisan tinker
 
   php artisan make:test CategoryTest --unit
+
+
+
+  vendor/bin/phpunit tests/Feature/Http/Controllers/Api/CategoryControllerTest.php
 ```

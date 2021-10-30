@@ -12,7 +12,7 @@ class GenreController extends Controller
         'name' => 'required|max:255',
         'is_active' => 'boolean'
     ];
-   
+
     public function index()
     {
         return Genre::all();
@@ -21,7 +21,9 @@ class GenreController extends Controller
     public function store(Request $request)
     {
         $this->validate($request, $this->rules);
-        return Genre::create($request->all());
+        $genre = Genre::create($request->all());
+        $genre->refresh();
+        return $genre;
     }
 
     public function show(Genre $genre)

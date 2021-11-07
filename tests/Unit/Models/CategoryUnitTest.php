@@ -2,51 +2,51 @@
 
 namespace Tests\Unit\Models;
 
-use App\Models\Genre;
+use App\Models\Category;
 use PHPUnit\Framework\TestCase;
 use App\Models\Traits\Uuid;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class GenreTest extends TestCase
+class CategoryUnitTest extends TestCase
 {
-    private $genre;
+    private $category;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->genre = new Genre();
+        $this->category = new Category();
     }
 
     public function testFillableAttribute()
     {
-        $fillable = ['name', 'is_active'];
+        $fillable = ['name', 'description', 'is_active'];
 
-        $this->assertEqualsCanonicalizing($fillable, $this->genre->getFillable());
+        $this->assertEqualsCanonicalizing($fillable, $this->category->getFillable());
     }
 
     public function testIncrementingAttribute()
     {
-        $this->assertFalse($this->genre->incrementing);
+        $this->assertFalse($this->category->incrementing);
     }
 
     public function testDatesAttribute()
     {
         $dates = ['deleted_at', 'created_at', 'updated_at'];
 
-        $this->assertEqualsCanonicalizing($dates, $this->genre->getDates());
-        $this->assertCount(count($dates), $this->genre->getDates());
+        $this->assertEqualsCanonicalizing($dates, $this->category->getDates());
+        $this->assertCount(count($dates), $this->category->getDates());
     }
 
     public function testCastsAttribute()
     {
         $casts = ['is_active' => 'boolean'];
-        $this->assertEqualsCanonicalizing($casts, $this->genre->getCasts());
+        $this->assertEqualsCanonicalizing($casts, $this->category->getCasts());
     }
 
     public function testIfUseTraits()
     {
         $traits = [SoftDeletes::class, Uuid::class];
 
-        $this->assertEquals($traits, array_keys(class_uses(genre::class)));
+        $this->assertEquals($traits, array_keys(class_uses(Category::class)));
     }
 }

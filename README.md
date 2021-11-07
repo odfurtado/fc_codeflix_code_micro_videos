@@ -20,6 +20,7 @@ http://localhost:8000
 
 ```bash
   php artisan make:model Models/<Model> --all
+  php artisan make:migration create_category_video_table
   php artisan migrate --seed
 
   php artisan migrate:refresh --seed

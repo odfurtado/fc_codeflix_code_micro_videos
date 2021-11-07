@@ -39,6 +39,9 @@ trait TestValidations
       string $rule,
       array $ruleParams = []
    ) {
+      if ($response->status() === 500) {
+         dd($response->content());
+      }
       $response
          ->assertStatus(422)
          ->assertJsonValidationErrors($fields);

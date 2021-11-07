@@ -21,15 +21,14 @@ http://localhost:8000
 ```bash
   php artisan make:model Models/<Model> --all
   php artisan make:migration create_category_video_table
-  php artisan migrate --seed
+  php artisan make:rule GenresHasCategoriesRule
 
+  php artisan migrate --seed
   php artisan migrate:refresh --seed
 
   php artisan tinker
 
+
   php artisan make:test CategoryTest --unit
-
-
-
   vendor/bin/phpunit tests/Feature/Http/Controllers/Api/CategoryControllerTest.php
 ```

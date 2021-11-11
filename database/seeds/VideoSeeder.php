@@ -14,7 +14,7 @@ class VideoSeeder extends Seeder
     public function run()
     {
         $genres = Genre::all();
-        factory(Video::class, 10)
+        factory(Video::class, 1)
             ->create()
             ->each(function (Video $video) use ($genres) {
                 $subGenres = $genres->random(2)->load('categories');

@@ -1,37 +1,19 @@
 <?php
 
-namespace Tests\Feature\Models;
+namespace Tests\Feature\Models\Video;
 
 use App\Models\Category;
 use App\Models\Genre;
 use App\Models\Video;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
-use Tests\TestCase;
 
-class VideoTest extends TestCase
+class VideoTest extends BaseVideoTest
 {
     static $UUID_REGEX = "/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i";
 
-    use DatabaseMigrations;
-
-    private $data;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->data = [
-            'title' => 'title',
-            'description' => 'description',
-            'year_launched' => 2010,
-            'rating' => Video::RATING_LIST[0],
-            'duration' => 90,
-        ];
-    }
-
     public function testList()
     {
-        factory(Video::class, 1)->create();
+        factory(Video::class)->create();
 
         $videos = Video::all();
 
@@ -40,7 +22,8 @@ class VideoTest extends TestCase
         $this->assertEqualsCanonicalizing(
             [
                 'id', 'title', 'description', 'year_launched', 'opened', 'rating',
-                'duration', 'created_at', 'updated_at', 'deleted_at'
+                'duration', 'created_at', 'updated_at', 'deleted_at', 'video_file',
+                'thumb_file'
             ],
             $videoKeys
         );
@@ -48,21 +31,23 @@ class VideoTest extends TestCase
 
     public function testCreateWithBasicFields()
     {
-        $category = factory(Category::class)->create();
-        $genre = factory(Genre::class)->create();
-
-        $video = Video::create($this->data);
+        $video = Video::create($this->data + $this->fileFieldsData);
         $video->refresh();
-        $this->assertEquals(36, strlen($video->id));
-        $this->assertTrue(boolval(preg_match(CategoryTest::$UUID_REGEX, $video->id)));
-        $this->assertEquals($this->data['title'], $video->title);
-        $this->assertEquals($this->data['description'], $video->description);
-        $this->assertEquals($this->data['year_launched'], $video->year_launched);
-        $this->assertFalse($video->opened);
-        $this->assertEquals($this->data['rating'], $video->rating);
-        $this->assertEquals($this->data['duration'], $video->duration);
 
-        $this->assertDatabaseHas('videos', $this->data + ['id' => $video->id, 'opened' => false]);
+        $this->assertEquals(36, strlen($video->id));
+        $this->assertTrue(boolval(preg_match(BaseVideoTest::$UUID_REGEX, $video->id)));
+
+        foreach ($this->data as $field => $value) {
+            $this->assertEquals($value, $video->{$field});
+        }
+        foreach ($this->fileFieldsData as $field => $value) {
+            $this->assertEquals($value, $video->{$field});
+        }
+
+        $this->assertDatabaseHas(
+            'videos',
+            $this->data + $this->fileFieldsData + ['id' => $video->id, 'opened' => false]
+        );
 
 
         $video = Video::create($this->data + ['opened' => true]);
@@ -112,13 +97,16 @@ class VideoTest extends TestCase
         $categoryUpdated = factory(Category::class)->create();
         $genreUpdated = factory(Genre::class)->create();
 
-        $video->update($this->data + [
+        $video->update($this->data + $this->fileFieldsData + [
             'categories_id' => [$categoryUpdated->id],
             'genres_id' => [$genreUpdated->id]
         ]);
 
         foreach ($this->data as $key => $value) {
             $this->assertEquals($value, $video->{$key});
+        }
+        foreach ($this->fileFieldsData as $field => $value) {
+            $this->assertEquals($value, $video->{$field});
         }
         $this->assertDatabaseHas('videos', $this->data + ['id' => $video->id]);
 

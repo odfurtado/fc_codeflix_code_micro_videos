@@ -2,15 +2,19 @@
 
 namespace App\Models;
 
+use App\Models\Traits\UploadFiles;
 use App\Models\Traits\Uuid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Video extends Model
 {
-    use SoftDeletes, Uuid;
+    use SoftDeletes, Uuid, UploadFiles;
 
     const RATING_LIST = ['L', '10', '12', '14', '16', '18'];
+
+
+    public static $fileFields = ['video_file', 'thumb_file'];
 
     public $incrementing = false;
     protected $keyType = 'string';
@@ -20,7 +24,9 @@ class Video extends Model
         'year_launched',
         'opened',
         'rating',
-        'duration'
+        'duration',
+        'video_file',
+        'thumb_file'
     ];
     protected $dates = ['deleted_at'];
     protected $casts = [
@@ -31,19 +37,21 @@ class Video extends Model
 
     public static function create(array $attributes = [])
     {
+        $files = self::extractFiles($attributes);
+
         try {
             \DB::beginTransaction();
 
-            $obj = static::query()->create($attributes);
-            static::handleRelations($obj, $attributes);
-            //upload
+            $video = static::query()->create($attributes);
+            static::handleRelations($video, $attributes);
+            $video->uploadFiles($files);
 
             \DB::commit();
 
-            return $obj;
+            return $video;
         } catch (\Exception $e) {
-            if (isset($obj)) {
-                //excluir arquivos
+            if (isset($video)) {
+                $video->deleteFiles($files);
             }
             \DB::rollBack();
             throw $e;
@@ -52,21 +60,25 @@ class Video extends Model
 
     public function update(array $attributes = [], array $options = [])
     {
+        $files = self::extractFiles($attributes);
+
         try {
             \DB::beginTransaction();
 
             $saved = parent::update($attributes, $options);
             static::handleRelations($this, $attributes);
             if ($saved) {
-                //upload novos
-                //excluir antigos
+                $this->uploadFiles($files);
             }
-
             \DB::commit();
+
+            if ($saved && count($files)) {
+                $this->deleteOldFiles();
+            }
 
             return $saved;
         } catch (\Exception $e) {
-            //excluir arquivos de upload
+            $this->deleteFiles($files);
             \DB::rollBack();
             throw $e;
         }
@@ -90,5 +102,10 @@ class Video extends Model
     public function genres()
     {
         return $this->belongsToMany(Genre::class)->withTrashed();
+    }
+
+    protected function uploadDir()
+    {
+        return $this->id;
     }
 }

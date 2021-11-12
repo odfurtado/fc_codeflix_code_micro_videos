@@ -32,7 +32,9 @@ http://localhost:8000
   php artisan make:test CategoryTest --unit
   vendor/bin/phpunit tests/Feature/Http/Controllers/Api/CategoryControllerTest.php
 
+  php artisan storage:link
 
+  php artisan make:resource CategoryResource
 
   https://github.com/Superbalist/laravel-google-cloud-storage
   composer require superbalist/laravel-google-cloud-storage

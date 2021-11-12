@@ -23,7 +23,7 @@ class VideoTest extends BaseVideoTest
             [
                 'id', 'title', 'description', 'year_launched', 'opened', 'rating',
                 'duration', 'created_at', 'updated_at', 'deleted_at', 'video_file',
-                'thumb_file'
+                'thumb_file', 'banner_file', 'trailer_file'
             ],
             $videoKeys
         );

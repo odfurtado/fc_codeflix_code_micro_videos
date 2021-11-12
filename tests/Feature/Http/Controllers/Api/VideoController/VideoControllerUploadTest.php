@@ -2,8 +2,6 @@
 
 namespace Tests\Feature\Http\Controllers\Api\VideoController;
 
-use App\Models\Category;
-use App\Models\Genre;
 use App\Models\Video;
 use Illuminate\Http\UploadedFile;
 use Tests\Traits\TestUploads;
@@ -13,12 +11,43 @@ class VideoControllerUploadTest extends BaseVideoControllerTest
 {
     use TestValidations, TestUploads;
 
-    public function testInvalidationVideo()
+    public function testInvalidationThumbFile()
+    {
+        $this->assertInvalidationFile(
+            'thumb_file',
+            'jpg',
+            VIDEO::THUMB_FILE_MAX_SIZE,
+            'image'
+        );
+    }
+
+    public function testInvalidationBannerFile()
+    {
+        $this->assertInvalidationFile(
+            'banner_file',
+            'jpg',
+            VIDEO::BANNER_FILE_MAX_SIZE,
+            'image'
+        );
+    }
+
+    public function testInvalidationTrailerFile()
+    {
+        $this->assertInvalidationFile(
+            'trailer_file',
+            'mp4',
+            VIDEO::TRAILER_FILE_MAX_SIZE,
+            'mimetypes',
+            ['values' => 'video/mp4']
+        );
+    }
+
+    public function testInvalidationVideoFile()
     {
         $this->assertInvalidationFile(
             'video_file',
             'mp4',
-            12000,
+            VIDEO::VIDEO_FILE_MAX_SIZE,
             'mimetypes',
             ['values' => 'video/mp4']
         );
@@ -30,25 +59,14 @@ class VideoControllerUploadTest extends BaseVideoControllerTest
 
         $files = $this->getFiles();
 
-        $category = factory(Category::class)->create();
-        $genre = factory(Genre::class)->create();
-        $genre->categories()->sync($category->id);
 
         $response = $this->json(
             'PUT',
             $this->routeUpdate(),
-            $this->sendData
-                +
-                [
-                    'categories_id' => [$category->id],
-                    'genres_id' => [$genre->id]
-                ]
-                +
-                $files
+            $this->sendData + $files
         );
-
         $response->assertStatus(200);
-        $id = $response->json('id');
+        $id = $response->json('data.id');
         foreach ($files as $file) {
             \Storage::assertExists("$id/{$file->hashName()}");
         }
@@ -60,25 +78,14 @@ class VideoControllerUploadTest extends BaseVideoControllerTest
 
         $files = $this->getFiles();
 
-        $category = factory(Category::class)->create();
-        $genre = factory(Genre::class)->create();
-        $genre->categories()->sync($category->id);
-
         $response = $this->json(
             'POST',
             $this->routeStore(),
-            $this->sendData
-                +
-                [
-                    'categories_id' => [$category->id],
-                    'genres_id' => [$genre->id]
-                ]
-                +
-                $files
+            $this->sendData + $files
         );
 
         $response->assertStatus(201);
-        $id = $response->json('id');
+        $id = $response->json('data.id');
         foreach ($files as $file) {
             \Storage::assertExists("$id/{$file->hashName()}");
         }
@@ -87,7 +94,10 @@ class VideoControllerUploadTest extends BaseVideoControllerTest
     private function getFiles()
     {
         return [
-            'video_file' => UploadedFile::fake()->create('video_file.mp4')
+            'thumb_file' => UploadedFile::fake()->create('thumb_file.jpg'),
+            'banner_file' => UploadedFile::fake()->create('banner_file.jpg'),
+            'trailer_file' => UploadedFile::fake()->create('trailer_file.mp4'),
+            'video_file' => UploadedFile::fake()->create('video_file.mp4'),
         ];
     }
 

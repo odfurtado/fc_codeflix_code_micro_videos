@@ -2,15 +2,56 @@
 
 namespace Tests\Feature\Http\Controllers\Api\VideoController;
 
+use App\Http\Resources\VideoResource;
 use App\Models\Category;
 use App\Models\Genre;
 use App\Models\Video;
+use Tests\Traits\TestResources;
 use Tests\Traits\TestSaves;
 use Tests\Traits\TestValidations;
 
 class VideoControllerCRUDTest extends BaseVideoControllerTest
 {
-    use TestValidations, TestSaves;
+    use TestValidations, TestSaves, TestResources;
+
+    private $serializedFields = [
+        'id',
+        'title',
+        'description',
+        'year_launched',
+        'rating',
+        'duration',
+        'rating',
+        'opened',
+        'thumb_file_url',
+        'banner_file_url',
+        'video_file_url',
+        'trailer_file_url',
+        'created_at',
+        'updated_at',
+        'deleted_at',
+        'categories' => [
+            '*' => [
+                'id',
+                'name',
+                'description',
+                'is_active',
+                'created_at',
+                'updated_at',
+                'deleted_at'
+            ]
+        ],
+        'genres' => [
+            '*' => [
+                'id',
+                'name',
+                'is_active',
+                'created_at',
+                'updated_at',
+                'deleted_at',
+            ]
+        ]
+    ];
 
     public function testIndex()
     {
@@ -18,7 +59,16 @@ class VideoControllerCRUDTest extends BaseVideoControllerTest
 
         $response
             ->assertStatus(200)
-            ->assertJson([$this->video->toArray()]);
+            ->assertJsonStructure(
+                [
+                    'data' => [
+                        '*' => $this->serializedFields
+                    ],
+                    'meta' => [],
+                    'links' => []
+                ]
+            );
+        $this->assertResource($response, VideoResource::collection(collect([$this->video])));
     }
 
     public function testShow()
@@ -27,7 +77,13 @@ class VideoControllerCRUDTest extends BaseVideoControllerTest
 
         $response
             ->assertStatus(200)
-            ->assertJson($this->video->toArray());
+            ->assertJsonStructure([
+                'data' => $this->serializedFields
+            ]);
+        $this->assertResource(
+            $response,
+            new VideoResource(Video::find($response->json('data.id')))
+        );
     }
 
     public function testInvalidationRequired()
@@ -113,49 +169,49 @@ class VideoControllerCRUDTest extends BaseVideoControllerTest
 
     public function testStoreWithoutFiles()
     {
-        $category = factory(Category::class)->create();
-        $genre = factory(Genre::class)->create();
-        $genre->categories()->sync($category->id);
-
         $response = $this->assertStore(
-            $this->sendData + ['categories_id' => [$category->id], 'genres_id' => [$genre->id]],
-            $this->sendData + ['opened' => false]
+            $this->sendData,
+            $this->testData + ['opened' => false]
         );
 
-        $response->assertJsonStructure(['created_at', 'updated_at']);
-
-        $this->assertStore(
-            $this->sendData + ['categories_id' => [$category->id], 'genres_id' => [$genre->id], 'opened' => true],
-            $this->sendData + ['opened' => true]
+        $response->assertJsonStructure(['data' => $this->serializedFields]);
+        $this->assertResource(
+            $response,
+            new VideoResource(Video::find($response->json('data.id')))
         );
 
         $this->assertStore(
-            $this->sendData + ['categories_id' => [$category->id], 'genres_id' => [$genre->id], 'rating' => Video::RATING_LIST[1]],
-            $this->sendData + ['rating' => Video::RATING_LIST[1]]
+            $this->sendData + ['opened' => true],
+            $this->testData + ['opened' => true]
+        );
+
+        $this->assertStore(
+            $this->sendData + ['rating' => Video::RATING_LIST[1]],
+            $this->testData + ['rating' => Video::RATING_LIST[1]]
         );
     }
 
     public function testUpdateWithoutFiles()
     {
-        $category = factory(Category::class)->create();
-        $genre = factory(Genre::class)->create();
-        $genre->categories()->sync($category->id);
-
         $response = $this->assertUpdate(
-            $this->sendData + ['categories_id' => [$category->id], 'genres_id' => [$genre->id], 'opened' => false],
-            $this->sendData + ['opened' => false]
+            $this->sendData + ['opened' => false],
+            $this->testData + ['opened' => false]
         );
 
-        $response->assertJsonStructure(['created_at', 'updated_at']);
-
-        $this->assertUpdate(
-            $this->sendData + ['categories_id' => [$category->id], 'genres_id' => [$genre->id], 'opened' => true],
-            $this->sendData + ['opened' => true]
+        $response->assertJsonStructure(['data' => $this->serializedFields]);
+        $this->assertResource(
+            $response,
+            new VideoResource(Video::find($response->json('data.id')))
         );
 
         $this->assertUpdate(
-            $this->sendData + ['categories_id' => [$category->id], 'genres_id' => [$genre->id], 'rating' => Video::RATING_LIST[1]],
-            $this->sendData + ['rating' => Video::RATING_LIST[1]]
+            $this->sendData + ['opened' => true],
+            $this->testData + ['opened' => true]
+        );
+
+        $this->assertUpdate(
+            $this->sendData + ['rating' => Video::RATING_LIST[1]],
+            $this->testData + ['rating' => Video::RATING_LIST[1]]
         );
     }
 

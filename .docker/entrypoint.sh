@@ -1,7 +1,15 @@
 #!/bin/bash
 
 #On error no such file entrypoint.sh, execute in terminal - dos2unix .docker\entrypoint.sh
-cd backend
+
+### FRONTEND
+npm config set cache /var/www/.npm-cache --global
+cd /var/www/frontend
+npm install
+
+
+### BACKEND CONFIG
+cd /var/www/backend
 
 if [ ! -f ".env" ]; then
   cp .env.example .env

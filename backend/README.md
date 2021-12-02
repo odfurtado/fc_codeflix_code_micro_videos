@@ -39,4 +39,9 @@ http://localhost:8000
   https://github.com/Superbalist/laravel-google-cloud-storage
   composer require superbalist/laravel-google-cloud-storage
 
+
+  https://github.com/fruitcake/laravel-cors
+  composer require barryvdh/laravel-cors
+  php artisan vendor:publish --provider="Barryvdh\Cors\ServiceProvider"
+
 ```

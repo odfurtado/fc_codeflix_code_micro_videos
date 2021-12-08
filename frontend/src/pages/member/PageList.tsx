@@ -8,13 +8,13 @@ import { Table } from './Table';
 
 const PageList = () => {
 	return (
-		<Page title="Listagem de Categorias">
+		<Page title="Listagem de Membros">
 			<Box dir="rtl">
 				<Fab
-					title="Adicionar categoria"
+					title="Adicionar Membro"
 					size="small"
 					component={Link}
-					to="/categories/create"
+					to="/members/create"
 				>
 					<AddIcon />
 				</Fab>

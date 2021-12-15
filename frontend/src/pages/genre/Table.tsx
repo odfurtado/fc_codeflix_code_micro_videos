@@ -1,9 +1,9 @@
 import { Chip } from '@material-ui/core';
-import MUIDataTable, { MUIDataTableColumn } from 'mui-datatables';
-import React, { useEffect, useState } from 'react';
-import { httpVideo } from '../../util/http';
 import format from 'date-fns/format';
 import parseISO from 'date-fns/parseISO';
+import MUIDataTable, { MUIDataTableColumn } from 'mui-datatables';
+import React, { useEffect, useState } from 'react';
+import genreHttp from '../../util/http/genre-http';
 
 const columnsDefinition: MUIDataTableColumn[] = [
 	{
@@ -15,11 +15,7 @@ const columnsDefinition: MUIDataTableColumn[] = [
 		label: 'Categorias',
 		options: {
 			customBodyRender(categories) {
-				return categories
-					.map((category: any) => {
-						return category.name;
-					})
-					.join(', ');
+				return categories.map((category) => category.name).join(', ');
 			},
 		},
 	},
@@ -54,9 +50,7 @@ export const Table = (props: Props) => {
 	const [membersData, setMembersData] = useState([]);
 
 	useEffect(() => {
-		httpVideo
-			.get('genres')
-			.then((response) => setMembersData(response.data.data));
+		genreHttp.list().then((response) => setMembersData(response.data.data));
 	}, []);
 
 	return (

@@ -1,8 +1,8 @@
-import MUIDataTable, { MUIDataTableColumn } from 'mui-datatables';
-import React, { useEffect, useState } from 'react';
-import { httpVideo } from '../../util/http';
 import format from 'date-fns/format';
 import parseISO from 'date-fns/parseISO';
+import MUIDataTable, { MUIDataTableColumn } from 'mui-datatables';
+import React, { useEffect, useState } from 'react';
+import memberHttp from '../../util/http/member-http';
 
 enum CastMemberType {
 	Diretor = 1,
@@ -16,7 +16,7 @@ const columnsDefinition: MUIDataTableColumn[] = [
 	},
 	{
 		name: 'type',
-		label: 'Ativo',
+		label: 'Tipo',
 		options: {
 			customBodyRender(type) {
 				return CastMemberType[type];
@@ -40,9 +40,7 @@ export const Table = (props: Props) => {
 	const [membersData, setMembersData] = useState([]);
 
 	useEffect(() => {
-		httpVideo
-			.get('cast_members')
-			.then((response) => setMembersData(response.data.data));
+		memberHttp.list().then((response) => setMembersData(response.data.data));
 	}, []);
 
 	return (

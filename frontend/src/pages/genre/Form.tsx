@@ -30,9 +30,10 @@ export const Form = () => {
 	const classes = useStyle();
 
 	const buttonProps: ButtonProps = {
-		variant: 'outlined',
+		variant: 'contained',
 		size: 'small',
 		className: classes.submit,
+		color: 'secondary',
 	};
 
 	const [categories, setCategories] = React.useState<any[]>([]);

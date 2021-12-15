@@ -29,9 +29,10 @@ export const Form = () => {
 	const classes = useStyle();
 
 	const buttonProps: ButtonProps = {
-		variant: 'outlined',
+		variant: 'contained',
 		size: 'small',
 		className: classes.submit,
+		color: 'secondary',
 	};
 
 	const { register, handleSubmit, getValues, setValue } = useForm<{
@@ -60,20 +61,29 @@ export const Form = () => {
 				inputRef={register}
 				className={classes.formElement}
 			/>
-			<FormControl margin="dense" className={classes.formElement}>
+			<FormControl
+				component="fieldset"
+				margin="dense"
+				className={classes.formElement}
+			>
 				<FormLabel component="legend">Tipo</FormLabel>
 				<RadioGroup
 					name="type"
 					onChange={(e) => {
 						setValue('type', parseInt(e.target.value));
 					}}
+					row
 				>
 					<FormControlLabel
 						value="1"
-						control={<Radio />}
+						control={<Radio color="primary" />}
 						label="Diretor"
 					/>
-					<FormControlLabel value="2" control={<Radio />} label="Ator" />
+					<FormControlLabel
+						value="2"
+						control={<Radio color="primary" />}
+						label="Ator"
+					/>
 				</RadioGroup>
 			</FormControl>
 			<Box dir="rtl">

@@ -23,9 +23,10 @@ export const Form = () => {
 	const classes = useStyle();
 
 	const buttonProps: ButtonProps = {
-		variant: 'outlined',
+		variant: 'contained',
 		size: 'small',
 		className: classes.submit,
+		color: 'secondary',
 	};
 
 	const { register, handleSubmit, getValues } = useForm<{ name; is_active }>({
@@ -59,9 +60,16 @@ export const Form = () => {
 				margin="dense"
 				inputRef={register}
 			/>
-			<Checkbox name="is_active" inputRef={register} defaultChecked /> Ativo?
+			<Checkbox
+				color="primary"
+				name="is_active"
+				inputRef={register}
+				defaultChecked
+			/>{' '}
+			Ativo?
 			<Box dir="rtl">
 				<Button
+					color="primary"
 					{...buttonProps}
 					onClick={() => onSubmit(getValues(), null)}
 				>

@@ -61,27 +61,37 @@ export const Form = () => {
 		disabled: loading,
 	};
 
-	React.useEffect(() => {
+	const loadData = React.useCallback(async () => {
 		if (!id) {
 			return;
 		}
 
 		setLoading(true);
-		genreHttp
-			.get(id)
-			.then(({ data }) => {
-				console.log(data.data);
-				setGenre(data.data);
-				const categories_id = data.data.categories.map(
-					(category) => category.id
-				);
-				reset({
-					...data.data,
-					categories_id,
-				});
-			})
-			.finally(() => setLoading(false));
+
+		try {
+			const { data } = await genreHttp.get(id);
+			setGenre(data.data);
+			const categories_id = data.data.categories.map(
+				(category) => category.id
+			);
+			reset({
+				...data.data,
+				categories_id,
+			});
+		} catch (error) {
+			console.log(error);
+			snackbar.enqueueSnackbar('Não foi possível carregar as informações', {
+				variant: 'error',
+			});
+		} finally {
+			setLoading(false);
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [id, reset]);
+
+	React.useEffect(() => {
+		loadData();
+	}, [loadData]);
 
 	React.useEffect(() => {
 		register({ name: 'categories_id' });
@@ -92,36 +102,38 @@ export const Form = () => {
 		categoryHttp.list().then(({ data }) => setCategories(data.data));
 	}, []);
 
-	const onSubmit = (formData, event) => {
+	const onSubmit = async (formData, event) => {
 		setLoading(true);
-		const httpRequest = !id
-			? genreHttp.create(formData)
-			: genreHttp.update(genre!.id, formData);
 
-		httpRequest
-			.then(({ data }) => {
-				snackbar.enqueueSnackbar('Gênero salvo com sucesso!', {
-					variant: 'success',
-				});
-				setTimeout(() => {
-					if (event.type === 'submit') {
-						if (id) {
-							history.replace(`/genres/${data.data.id}/edit`);
-						} else {
-							history.push(`/genres/${data.data.id}/edit`);
-						}
+		try {
+			const httpRequest = !id
+				? genreHttp.create(formData)
+				: genreHttp.update(genre!.id, formData);
+
+			const { data } = await httpRequest;
+			snackbar.enqueueSnackbar('Gênero salvo com sucesso!', {
+				variant: 'success',
+			});
+
+			setTimeout(() => {
+				if (event.type === 'submit') {
+					if (id) {
+						history.replace(`/genres/${data.data.id}/edit`);
 					} else {
-						history.push('/genres');
+						history.push(`/genres/${data.data.id}/edit`);
 					}
-				});
-			})
-			.catch((error) => {
-				console.log(error);
-				snackbar.enqueueSnackbar('Não foi possivel salvar o gênero.', {
-					variant: 'error',
-				});
-			})
-			.finally(() => setLoading(false));
+				} else {
+					history.push('/genres');
+				}
+			});
+		} catch (error) {
+			console.log(error);
+			snackbar.enqueueSnackbar('Não foi possivel salvar o gênero.', {
+				variant: 'error',
+			});
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	return (

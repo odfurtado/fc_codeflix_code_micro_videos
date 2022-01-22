@@ -58,56 +58,68 @@ export const Form = () => {
 		disabled: loading,
 	};
 
-	React.useEffect(() => {
+	const loadData = React.useCallback(async () => {
 		if (!id) {
 			return;
 		}
 
 		setLoading(true);
-		memberHttp
-			.get(id)
-			.then(({ data }) => {
-				console.log(data.data);
-				setMember(data.data);
-				reset(data.data);
-			})
-			.finally(() => setLoading(false));
+
+		try {
+			const { data } = await memberHttp.get(id);
+			setMember(data.data);
+			reset(data.data);
+		} catch (error) {
+			console.log(error);
+			snackbar.enqueueSnackbar('Não foi possível carregar as informações', {
+				variant: 'error',
+			});
+		} finally {
+			setLoading(false);
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [id, reset]);
+
+	React.useEffect(() => {
+		loadData();
+	}, [loadData]);
 
 	React.useEffect(() => {
 		register({ name: 'type' });
 	}, [register]);
 
-	const onSubmit = (formData, event) => {
+	const onSubmit = async (formData, event) => {
 		setLoading(true);
-		const httpRequest = !id
-			? memberHttp.create(formData)
-			: memberHttp.update(member!.id, formData);
 
-		httpRequest
-			.then(({ data }) => {
-				snackbar.enqueueSnackbar('Membro salvo com sucesso!', {
-					variant: 'success',
-				});
-				setTimeout(() => {
-					if (event.type === 'submit') {
-						if (id) {
-							history.replace(`/members/${data.data.id}/edit`);
-						} else {
-							history.push(`/members/${data.data.id}/edit`);
-						}
+		try {
+			const httpRequest = !id
+				? memberHttp.create(formData)
+				: memberHttp.update(member!.id, formData);
+
+			const { data } = await httpRequest;
+			snackbar.enqueueSnackbar('Membro salvo com sucesso!', {
+				variant: 'success',
+			});
+
+			setTimeout(() => {
+				if (event.type === 'submit') {
+					if (id) {
+						history.replace(`/members/${data.data.id}/edit`);
 					} else {
-						history.push('/members');
+						history.push(`/members/${data.data.id}/edit`);
 					}
-				});
-			})
-			.catch((error) => {
-				console.log(error);
-				snackbar.enqueueSnackbar('Não foi possivel salvar o membro.', {
-					variant: 'error',
-				});
-			})
-			.finally(() => setLoading(false));
+				} else {
+					history.push('/members');
+				}
+			});
+		} catch (error) {
+			console.log(error);
+			snackbar.enqueueSnackbar('Não foi possivel salvar o membro.', {
+				variant: 'error',
+			});
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	return (

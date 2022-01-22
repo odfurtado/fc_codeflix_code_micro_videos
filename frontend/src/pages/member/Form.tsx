@@ -5,6 +5,7 @@ import {
 	ButtonProps,
 	FormControl,
 	FormControlLabel,
+	FormHelperText,
 	FormLabel,
 	makeStyles,
 	Radio,
@@ -13,8 +14,11 @@ import {
 	Theme,
 } from '@material-ui/core';
 import * as React from 'react';
+import * as yup from '../../util/vendor/yup';
 import { useForm } from 'react-hook-form';
 import memberHttp from '../../util/http/member-http';
+import { useHistory, useParams } from 'react-router-dom';
+import { useSnackbar } from 'notistack';
 
 const useStyle = makeStyles((theme: Theme) => ({
 	submit: {
@@ -25,29 +29,85 @@ const useStyle = makeStyles((theme: Theme) => ({
 	},
 }));
 
+const validationSchema = yup.object().shape({
+	name: yup.string().label('Nome').required().max(255),
+	type: yup.number().label('Tipo').required(),
+});
+
 export const Form = () => {
 	const classes = useStyle();
+
+	const { register, handleSubmit, setValue, errors, reset, watch } = useForm<{
+		name;
+		type;
+	}>({
+		validationSchema,
+		defaultValues: {},
+	});
+	const snackbar = useSnackbar();
+	const history = useHistory();
+	const { id } = useParams<{ id: string }>();
+	const [member, setMember] = React.useState<{ id: string } | null>(null);
+	const [loading, setLoading] = React.useState(false);
 
 	const buttonProps: ButtonProps = {
 		variant: 'contained',
 		size: 'small',
 		className: classes.submit,
 		color: 'secondary',
+		disabled: loading,
 	};
 
-	const { register, handleSubmit, getValues, setValue } = useForm<{
-		name;
-		type;
-	}>({
-		defaultValues: {},
-	});
+	React.useEffect(() => {
+		if (!id) {
+			return;
+		}
+
+		setLoading(true);
+		memberHttp
+			.get(id)
+			.then(({ data }) => {
+				console.log(data.data);
+				setMember(data.data);
+				reset(data.data);
+			})
+			.finally(() => setLoading(false));
+	}, [id, reset]);
 
 	React.useEffect(() => {
 		register({ name: 'type' });
 	}, [register]);
 
 	const onSubmit = (formData, event) => {
-		memberHttp.create(formData).then((data) => console.log(data.data));
+		setLoading(true);
+		const httpRequest = !id
+			? memberHttp.create(formData)
+			: memberHttp.update(member!.id, formData);
+
+		httpRequest
+			.then(({ data }) => {
+				snackbar.enqueueSnackbar('Membro salvo com sucesso!', {
+					variant: 'success',
+				});
+				setTimeout(() => {
+					if (event.type === 'submit') {
+						if (id) {
+							history.replace(`/members/${data.data.id}/edit`);
+						} else {
+							history.push(`/members/${data.data.id}/edit`);
+						}
+					} else {
+						history.push('/members');
+					}
+				});
+			})
+			.catch((error) => {
+				console.log(error);
+				snackbar.enqueueSnackbar('Não foi possivel salvar o membro.', {
+					variant: 'error',
+				});
+			})
+			.finally(() => setLoading(false));
 	};
 
 	return (
@@ -60,11 +120,17 @@ export const Form = () => {
 				margin="dense"
 				inputRef={register}
 				className={classes.formElement}
+				error={!!errors.name}
+				helperText={errors.name && errors.name.message}
+				InputLabelProps={{ shrink: true }}
+				disabled={loading}
 			/>
 			<FormControl
 				component="fieldset"
 				margin="dense"
 				className={classes.formElement}
+				error={!!errors.type}
+				disabled={loading}
 			>
 				<FormLabel component="legend">Tipo</FormLabel>
 				<RadioGroup
@@ -73,6 +139,7 @@ export const Form = () => {
 						setValue('type', parseInt(e.target.value));
 					}}
 					row
+					value={watch('type') + ''}
 				>
 					<FormControlLabel
 						value="1"
@@ -85,12 +152,14 @@ export const Form = () => {
 						label="Ator"
 					/>
 				</RadioGroup>
+				{errors.type && (
+					<FormHelperText id="type-helper-text">
+						{errors.type.message}
+					</FormHelperText>
+				)}
 			</FormControl>
 			<Box dir="rtl">
-				<Button
-					{...buttonProps}
-					onClick={() => onSubmit(getValues(), null)}
-				>
+				<Button {...buttonProps} onClick={handleSubmit(onSubmit)}>
 					Salvar
 				</Button>
 				<Button {...buttonProps} type="submit">

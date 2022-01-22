@@ -3,19 +3,19 @@ import {
 	Button,
 	ButtonProps,
 	Checkbox,
+	FormControlLabel,
 	makeStyles,
 	MenuItem,
 	TextField,
 	Theme,
 } from '@material-ui/core';
 import * as React from 'react';
+import * as yup from '../../util/vendor/yup';
 import { useForm } from 'react-hook-form';
 import categoryHttp from '../../util/http/category-http';
 import genreHttp from '../../util/http/genre-http';
-
-//Nome
-//Categoria
-//Ativo
+import { useSnackbar } from 'notistack';
+import { useHistory, useParams } from 'react-router-dom';
 
 const useStyle = makeStyles((theme: Theme) => ({
 	submit: {
@@ -26,30 +26,66 @@ const useStyle = makeStyles((theme: Theme) => ({
 	},
 }));
 
+const validationSchema = yup.object().shape({
+	name: yup.string().label('Nome').required().max(255),
+	categories_id: yup.array().min(1).label('Categorias').required(),
+});
+
 export const Form = () => {
 	const classes = useStyle();
+
+	const [categories, setCategories] = React.useState<any[]>([]);
+	const { register, handleSubmit, getValues, setValue, errors, reset, watch } =
+		useForm<{
+			name;
+			categories_id;
+			is_active;
+		}>({
+			validationSchema,
+			defaultValues: {
+				categories_id: [],
+				is_active: true,
+			},
+		});
+	const snackbar = useSnackbar();
+	const history = useHistory();
+	const { id } = useParams<{ id: string }>();
+	const [genre, setGenre] = React.useState<{ id: string } | null>(null);
+	const [loading, setLoading] = React.useState(false);
 
 	const buttonProps: ButtonProps = {
 		variant: 'contained',
 		size: 'small',
 		className: classes.submit,
 		color: 'secondary',
+		disabled: loading,
 	};
 
-	const [categories, setCategories] = React.useState<any[]>([]);
-	const { register, handleSubmit, getValues, setValue, watch } = useForm<{
-		name;
-		categories_id;
-		is_active;
-	}>({
-		defaultValues: {
-			categories_id: [],
-			is_active: true,
-		},
-	});
+	React.useEffect(() => {
+		if (!id) {
+			return;
+		}
+
+		setLoading(true);
+		genreHttp
+			.get(id)
+			.then(({ data }) => {
+				console.log(data.data);
+				setGenre(data.data);
+				const categories_id = data.data.categories.map(
+					(category) => category.id
+				);
+				reset({
+					...data.data,
+					categories_id,
+				});
+			})
+			.finally(() => setLoading(false));
+	}, [id, reset]);
 
 	React.useEffect(() => {
 		register({ name: 'categories_id' });
+		register({ name: 'is_active' });
 	}, [register]);
 
 	React.useEffect(() => {
@@ -57,7 +93,35 @@ export const Form = () => {
 	}, []);
 
 	const onSubmit = (formData, event) => {
-		genreHttp.create(formData).then((response) => console.log(response));
+		setLoading(true);
+		const httpRequest = !id
+			? genreHttp.create(formData)
+			: genreHttp.update(genre!.id, formData);
+
+		httpRequest
+			.then(({ data }) => {
+				snackbar.enqueueSnackbar('Gênero salvo com sucesso!', {
+					variant: 'success',
+				});
+				setTimeout(() => {
+					if (event.type === 'submit') {
+						if (id) {
+							history.replace(`/genres/${data.data.id}/edit`);
+						} else {
+							history.push(`/genres/${data.data.id}/edit`);
+						}
+					} else {
+						history.push('/genres');
+					}
+				});
+			})
+			.catch((error) => {
+				console.log(error);
+				snackbar.enqueueSnackbar('Não foi possivel salvar o gênero.', {
+					variant: 'error',
+				});
+			})
+			.finally(() => setLoading(false));
 	};
 
 	return (
@@ -69,6 +133,10 @@ export const Form = () => {
 				variant="outlined"
 				margin="dense"
 				inputRef={register}
+				error={!!errors.name}
+				helperText={errors.name && errors.name.message}
+				InputLabelProps={{ shrink: true }}
+				disabled={loading}
 				className={classes.formElement}
 			/>
 			<TextField
@@ -84,6 +152,10 @@ export const Form = () => {
 				}}
 				SelectProps={{ multiple: true }}
 				className={classes.formElement}
+				error={!!errors.categories_id}
+				helperText={errors.categories_id && errors.categories_id.message}
+				InputLabelProps={{ shrink: true }}
+				disabled={loading}
 			>
 				<MenuItem value="" disabled>
 					<em>Selecione</em>
@@ -94,11 +166,28 @@ export const Form = () => {
 					</MenuItem>
 				))}
 			</TextField>
-			<Checkbox name="is_active" inputRef={register} defaultChecked /> Ativo?
+
+			<FormControlLabel
+				control={
+					<Checkbox
+						color="primary"
+						name="is_active"
+						onChange={() =>
+							setValue('is_active', !getValues()['is_active'])
+						}
+						checked={watch('is_active')}
+					/>
+				}
+				label={'Ativo?'}
+				labelPlacement="end"
+				disabled={loading}
+			/>
+
 			<Box dir="rtl">
 				<Button
+					color="primary"
 					{...buttonProps}
-					onClick={() => onSubmit(getValues(), null)}
+					onClick={handleSubmit(onSubmit)}
 				>
 					Salvar
 				</Button>

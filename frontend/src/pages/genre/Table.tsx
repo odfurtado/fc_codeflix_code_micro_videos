@@ -1,4 +1,3 @@
-import { Chip } from '@material-ui/core';
 import format from 'date-fns/format';
 import parseISO from 'date-fns/parseISO';
 import MUIDataTable, { MUIDataTableColumn } from 'mui-datatables';

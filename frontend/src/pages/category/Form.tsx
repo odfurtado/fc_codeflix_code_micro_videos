@@ -1,35 +1,20 @@
 // @flow
-import {
-	Box,
-	Button,
-	ButtonProps,
-	Checkbox,
-	makeStyles,
-	TextField,
-	Theme,
-	FormControlLabel,
-} from '@material-ui/core';
-import { useForm } from 'react-hook-form';
-
-import * as React from 'react';
-import categoryHttp from '../../util/http/category-http';
-import * as yup from '../../util/vendor/yup';
-import { useHistory, useParams } from 'react-router-dom';
+import { Checkbox, FormControlLabel, TextField } from '@material-ui/core';
 import { useSnackbar } from 'notistack';
-
-const useStyle = makeStyles((theme: Theme) => ({
-	submit: {
-		margin: theme.spacing(1),
-	},
-}));
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { useHistory, useParams } from 'react-router-dom';
+import { DefaultForm } from '../../components/DefaultForm';
+import SubmitActions from '../../components/SubmitActions';
+import categoryHttp from '../../util/http/category-http';
+import { Category } from '../../util/models';
+import * as yup from '../../util/vendor/yup';
 
 const validationSchema = yup.object().shape({
 	name: yup.string().label('Nome').required().max(255),
 });
 
 export const Form = () => {
-	const classes = useStyle();
-
 	const { register, handleSubmit, getValues, setValue, errors, reset, watch } =
 		useForm<{
 			name;
@@ -44,16 +29,8 @@ export const Form = () => {
 	const snackbar = useSnackbar();
 	const history = useHistory();
 	const { id } = useParams<{ id: string }>();
-	const [category, setCategory] = React.useState<{ id: string } | null>(null);
+	const [category, setCategory] = React.useState<Category | null>(null);
 	const [loading, setLoading] = React.useState(false);
-
-	const buttonProps: ButtonProps = {
-		variant: 'contained',
-		size: 'small',
-		className: classes.submit,
-		color: 'secondary',
-		disabled: loading,
-	};
 
 	const loadData = React.useCallback(async () => {
 		if (!id) {
@@ -121,7 +98,7 @@ export const Form = () => {
 	};
 
 	return (
-		<form onSubmit={handleSubmit(onSubmit)}>
+		<DefaultForm onSubmit={handleSubmit(onSubmit)}>
 			<TextField
 				name="name"
 				label="Nome"
@@ -163,18 +140,10 @@ export const Form = () => {
 				disabled={loading}
 			/>
 
-			<Box dir="rtl">
-				<Button
-					color="primary"
-					{...buttonProps}
-					onClick={handleSubmit(onSubmit)}
-				>
-					Salvar
-				</Button>
-				<Button {...buttonProps} type="submit">
-					Salvar e continuar editando
-				</Button>
-			</Box>
-		</form>
+			<SubmitActions
+				disabled={loading}
+				handleSave={handleSubmit(onSubmit)}
+			/>
+		</DefaultForm>
 	);
 };

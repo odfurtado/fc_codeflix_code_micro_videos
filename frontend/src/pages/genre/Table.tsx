@@ -1,11 +1,24 @@
+import { IconButton } from '@material-ui/core';
+import EditIcon from '@material-ui/icons/Edit';
 import format from 'date-fns/format';
 import parseISO from 'date-fns/parseISO';
-import MUIDataTable, { MUIDataTableColumn } from 'mui-datatables';
+import { useSnackbar } from 'notistack';
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { BadgeNo, BadgeYes } from '../../components/Badge';
+import DefaultTable, { TableColumn } from '../../components/Table';
 import genreHttp from '../../util/http/genre-http';
+import { Genre, ListResponse } from '../../util/models';
 
-const columnsDefinition: MUIDataTableColumn[] = [
+const columnsDefinition: TableColumn[] = [
+	{
+		name: 'id',
+		label: 'ID',
+		options: {
+			sort: false,
+		},
+		width: '30%',
+	},
 	{
 		name: 'name',
 		label: 'Nome',
@@ -37,22 +50,71 @@ const columnsDefinition: MUIDataTableColumn[] = [
 			},
 		},
 	},
+	{
+		name: 'actions',
+		label: 'Ações',
+		width: '13%',
+		options: {
+			sort: false,
+			filter: false,
+			customBodyRender: (value, tableMeta) => {
+				return (
+					<IconButton
+						color={'secondary'}
+						component={Link}
+						to={`/genres/${tableMeta.rowData[0]}/edit`}
+					>
+						<EditIcon />
+					</IconButton>
+				);
+			},
+		},
+	},
 ];
 
 type Props = {};
 
 export const Table = (props: Props) => {
-	const [membersData, setMembersData] = useState([]);
+	const snackbar = useSnackbar();
+	const [loading, setLoading] = useState<boolean>(false);
+	const [membersData, setMembersData] = useState<Genre[]>([]);
 
 	useEffect(() => {
-		genreHttp.list().then((response) => setMembersData(response.data.data));
+		let isSubscribed = true;
+		setLoading(true);
+		(async () => {
+			try {
+				const { data: responseData } = await genreHttp.list<
+					ListResponse<Genre>
+				>();
+				if (isSubscribed) {
+					setMembersData(responseData.data);
+				}
+			} catch (error) {
+				console.log(error);
+				snackbar.enqueueSnackbar(
+					'Não foi possivel carregar as informações.',
+					{
+						variant: 'error',
+					}
+				);
+			} finally {
+				setLoading(false);
+			}
+		})();
+
+		return () => {
+			isSubscribed = false;
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	return (
-		<MUIDataTable
+		<DefaultTable
 			title=""
 			columns={columnsDefinition}
 			data={membersData}
-		></MUIDataTable>
+			loading={loading}
+		></DefaultTable>
 	);
 };

@@ -1,7 +1,4 @@
 import {
-	Box,
-	Button,
-	ButtonProps,
 	Checkbox,
 	FormControlLabel,
 	makeStyles,
@@ -9,18 +6,18 @@ import {
 	TextField,
 	Theme,
 } from '@material-ui/core';
+import { useSnackbar } from 'notistack';
 import * as React from 'react';
-import * as yup from '../../util/vendor/yup';
 import { useForm } from 'react-hook-form';
+import { useHistory, useParams } from 'react-router-dom';
+import { DefaultForm } from '../../components/DefaultForm';
+import SubmitActions from '../../components/SubmitActions';
 import categoryHttp from '../../util/http/category-http';
 import genreHttp from '../../util/http/genre-http';
-import { useSnackbar } from 'notistack';
-import { useHistory, useParams } from 'react-router-dom';
+import { Category, Genre } from '../../util/models';
+import * as yup from '../../util/vendor/yup';
 
 const useStyle = makeStyles((theme: Theme) => ({
-	submit: {
-		margin: theme.spacing(1),
-	},
 	formElement: {
 		margin: theme.spacing(1),
 	},
@@ -34,7 +31,7 @@ const validationSchema = yup.object().shape({
 export const Form = () => {
 	const classes = useStyle();
 
-	const [categories, setCategories] = React.useState<any[]>([]);
+	const [categories, setCategories] = React.useState<Category[]>([]);
 	const { register, handleSubmit, getValues, setValue, errors, reset, watch } =
 		useForm<{
 			name;
@@ -50,16 +47,8 @@ export const Form = () => {
 	const snackbar = useSnackbar();
 	const history = useHistory();
 	const { id } = useParams<{ id: string }>();
-	const [genre, setGenre] = React.useState<{ id: string } | null>(null);
+	const [genre, setGenre] = React.useState<Genre | null>(null);
 	const [loading, setLoading] = React.useState(false);
-
-	const buttonProps: ButtonProps = {
-		variant: 'contained',
-		size: 'small',
-		className: classes.submit,
-		color: 'secondary',
-		disabled: loading,
-	};
 
 	const loadData = React.useCallback(async () => {
 		if (!id) {
@@ -99,7 +88,13 @@ export const Form = () => {
 	}, [register]);
 
 	React.useEffect(() => {
-		categoryHttp.list().then(({ data }) => setCategories(data.data));
+		categoryHttp
+			.list({
+				queryParams: {
+					all: '',
+				},
+			})
+			.then(({ data }) => setCategories(data.data));
 	}, []);
 
 	const onSubmit = async (formData, event) => {
@@ -137,7 +132,7 @@ export const Form = () => {
 	};
 
 	return (
-		<form onSubmit={handleSubmit(onSubmit)}>
+		<DefaultForm onSubmit={handleSubmit(onSubmit)}>
 			<TextField
 				name="name"
 				label="Nome"
@@ -195,18 +190,10 @@ export const Form = () => {
 				disabled={loading}
 			/>
 
-			<Box dir="rtl">
-				<Button
-					color="primary"
-					{...buttonProps}
-					onClick={handleSubmit(onSubmit)}
-				>
-					Salvar
-				</Button>
-				<Button {...buttonProps} type="submit">
-					Salvar e continuar editando
-				</Button>
-			</Box>
-		</form>
+			<SubmitActions
+				disabled={loading}
+				handleSave={handleSubmit(onSubmit)}
+			/>
+		</DefaultForm>
 	);
 };

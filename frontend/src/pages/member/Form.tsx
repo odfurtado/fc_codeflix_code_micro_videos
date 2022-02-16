@@ -1,8 +1,5 @@
 // @flow
 import {
-	Box,
-	Button,
-	ButtonProps,
 	FormControl,
 	FormControlLabel,
 	FormHelperText,
@@ -13,17 +10,17 @@ import {
 	TextField,
 	Theme,
 } from '@material-ui/core';
-import * as React from 'react';
-import * as yup from '../../util/vendor/yup';
-import { useForm } from 'react-hook-form';
-import memberHttp from '../../util/http/member-http';
-import { useHistory, useParams } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { useHistory, useParams } from 'react-router-dom';
+import { DefaultForm } from '../../components/DefaultForm';
+import SubmitActions from '../../components/SubmitActions';
+import memberHttp from '../../util/http/member-http';
+import { CastMember } from '../../util/models';
+import * as yup from '../../util/vendor/yup';
 
 const useStyle = makeStyles((theme: Theme) => ({
-	submit: {
-		margin: theme.spacing(1),
-	},
 	formElement: {
 		margin: theme.spacing(1),
 	},
@@ -47,16 +44,8 @@ export const Form = () => {
 	const snackbar = useSnackbar();
 	const history = useHistory();
 	const { id } = useParams<{ id: string }>();
-	const [member, setMember] = React.useState<{ id: string } | null>(null);
+	const [member, setMember] = React.useState<CastMember | null>(null);
 	const [loading, setLoading] = React.useState(false);
-
-	const buttonProps: ButtonProps = {
-		variant: 'contained',
-		size: 'small',
-		className: classes.submit,
-		color: 'secondary',
-		disabled: loading,
-	};
 
 	const loadData = React.useCallback(async () => {
 		if (!id) {
@@ -123,7 +112,7 @@ export const Form = () => {
 	};
 
 	return (
-		<form onSubmit={handleSubmit(onSubmit)}>
+		<DefaultForm onSubmit={handleSubmit(onSubmit)}>
 			<TextField
 				name="name"
 				label="Nome"
@@ -170,14 +159,10 @@ export const Form = () => {
 					</FormHelperText>
 				)}
 			</FormControl>
-			<Box dir="rtl">
-				<Button {...buttonProps} onClick={handleSubmit(onSubmit)}>
-					Salvar
-				</Button>
-				<Button {...buttonProps} type="submit">
-					Salvar e continuar editando
-				</Button>
-			</Box>
-		</form>
+			<SubmitActions
+				disabled={loading}
+				handleSave={handleSubmit(onSubmit)}
+			/>
+		</DefaultForm>
 	);
 };

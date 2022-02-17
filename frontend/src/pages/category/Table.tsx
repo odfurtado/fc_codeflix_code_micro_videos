@@ -3,12 +3,12 @@ import EditIcon from '@material-ui/icons/Edit';
 import format from 'date-fns/format';
 import parseISO from 'date-fns/parseISO';
 import { useSnackbar } from 'notistack';
-import React, { useEffect, useRef, useState, useReducer } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BadgeNo, BadgeYes } from '../../components/Badge';
 import DefaultTable, { TableColumn } from '../../components/Table';
 import { FilterResetButton } from '../../components/Table/FilterResetButton';
-import reducer, { INITIAL_STATE, Creators } from '../../store/search';
+import useFilter from '../../hooks/useFilter';
 import categoryHttp from '../../util/http/category-http';
 import { Category, ListResponse } from '../../util/models';
 
@@ -70,16 +70,31 @@ const columnsDefinition: TableColumn[] = [
 
 type TableProps = {};
 
+const DEBOUCE_TIME = 500;
+const rowsPerPage = 10;
+const rowsPerPageOptions = [5, 10, 15, 20];
+
 export const Table = (props: TableProps) => {
 	const snackbar = useSnackbar();
 	const subscribed = useRef(true);
 	const [loading, setLoading] = useState<boolean>(false);
 	const [categoriesData, setCategoriesData] = useState<Category[]>([]);
-	const [totalRecords, setTotalRecords] = useState<number>(0);
-	const [searchState, dispatch] = useReducer(reducer, INITIAL_STATE);
+	const {
+		filterState,
+		debouncedFilterState,
+		totalRecords,
+		setTotalRecords,
+		filterManager,
+	} = useFilter({
+		columns: columnsDefinition,
+		rowsPerPage,
+		rowsPerPageOptions,
+		debounceTime: DEBOUCE_TIME,
+	});
 
 	useEffect(() => {
 		subscribed.current = true;
+		filterManager.pushHistory();
 
 		getData();
 
@@ -88,10 +103,11 @@ export const Table = (props: TableProps) => {
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [
-		searchState.search,
-		searchState.pagination.page,
-		searchState.pagination.per_page,
-		searchState.order,
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		filterManager.cleanSearchText(debouncedFilterState.search),
+		debouncedFilterState.pagination.page,
+		debouncedFilterState.pagination.per_page,
+		debouncedFilterState.order,
 	]);
 
 	const getData = async () => {
@@ -101,11 +117,11 @@ export const Table = (props: TableProps) => {
 				ListResponse<Category>
 			>({
 				queryParams: {
-					search: cleanSearchText(searchState.search),
-					page: searchState.pagination.page,
-					per_page: searchState.pagination.per_page,
-					sort: searchState.order.sort,
-					dir: searchState.order.dir,
+					search: filterManager.cleanSearchText(filterState.search),
+					page: filterState.pagination.page,
+					per_page: filterState.pagination.per_page,
+					sort: filterState.order.sort,
+					dir: filterState.order.dir,
 				},
 			});
 			if (subscribed.current) {
@@ -125,48 +141,27 @@ export const Table = (props: TableProps) => {
 		}
 	};
 
-	const cleanSearchText = (text: any) => {
-		let newText = text;
-		if (text && text.value !== undefined) {
-			newText = text.value;
-		}
-
-		return newText;
-	};
-
 	return (
 		<DefaultTable
 			title=""
 			columns={columnsDefinition}
 			data={categoriesData}
 			loading={loading}
-			debouncedSearchTime={300}
+			debouncedSearchTime={DEBOUCE_TIME}
 			options={{
 				serverSide: true,
-				searchText: searchState.search as any,
-				page: searchState.pagination.page - 1,
-				rowsPerPage: searchState.pagination.per_page,
+				searchText: filterState.search as any,
+				page: filterState.pagination.page - 1,
+				rowsPerPage: filterState.pagination.per_page,
+				rowsPerPageOptions,
 				count: totalRecords,
 				customToolbar: () => (
-					<FilterResetButton
-						handleClick={() => {
-							dispatch(Creators.setReset());
-						}}
-					/>
+					<FilterResetButton handleClick={filterManager.resetSearch} />
 				),
-				onSearchChange: (value) =>
-					dispatch(Creators.setSearch({ search: value })),
-				onChangePage: (page) =>
-					dispatch(Creators.setPage({ page: page + 1 })),
-				onChangeRowsPerPage: (per_page) =>
-					dispatch(Creators.setPerPage({ per_page })),
-				onColumnSortChange: (changeColumn, direction) =>
-					dispatch(
-						Creators.setOrder({
-							sort: changeColumn,
-							dir: direction.includes('desc') ? 'desc' : 'asc',
-						})
-					),
+				onSearchChange: filterManager.changeSearch,
+				onChangePage: filterManager.changePage,
+				onChangeRowsPerPage: filterManager.changeRowsPerPage,
+				onColumnSortChange: filterManager.changeColumnSort,
 			}}
 		></DefaultTable>
 	);

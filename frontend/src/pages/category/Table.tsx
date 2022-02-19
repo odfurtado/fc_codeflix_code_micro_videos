@@ -6,7 +6,10 @@ import { useSnackbar } from 'notistack';
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BadgeNo, BadgeYes } from '../../components/Badge';
-import DefaultTable, { TableColumn } from '../../components/Table';
+import DefaultTable, {
+	MuiDataTableRefComponent,
+	TableColumn,
+} from '../../components/Table';
 import { FilterResetButton } from '../../components/Table/FilterResetButton';
 import useFilter from '../../hooks/useFilter';
 import categoryHttp from '../../util/http/category-http';
@@ -18,6 +21,7 @@ const columnsDefinition: TableColumn[] = [
 		label: 'ID',
 		options: {
 			sort: false,
+			filter: false,
 		},
 		width: '30%',
 	},
@@ -25,6 +29,9 @@ const columnsDefinition: TableColumn[] = [
 		name: 'name',
 		label: 'Nome',
 		width: '43%',
+		options: {
+			filter: false,
+		},
 	},
 	{
 		name: 'is_active',
@@ -33,6 +40,7 @@ const columnsDefinition: TableColumn[] = [
 			customBodyRender(value, tableMeta, updateValue) {
 				return value ? <BadgeYes /> : <BadgeNo />;
 			},
+			filter: false,
 		},
 		width: '4%',
 	},
@@ -43,6 +51,7 @@ const columnsDefinition: TableColumn[] = [
 			customBodyRender(value, tableMeta, updateValue) {
 				return <span>{format(parseISO(value), 'dd/MM/yyyy')}</span>;
 			},
+			filter: false,
 		},
 		width: '10%',
 	},
@@ -79,6 +88,8 @@ export const Table = (props: TableProps) => {
 	const subscribed = useRef(true);
 	const [loading, setLoading] = useState<boolean>(false);
 	const [categoriesData, setCategoriesData] = useState<Category[]>([]);
+	const tableRef =
+		useRef() as React.MutableRefObject<MuiDataTableRefComponent>;
 	const {
 		filterState,
 		debouncedFilterState,
@@ -90,6 +101,7 @@ export const Table = (props: TableProps) => {
 		rowsPerPage,
 		rowsPerPageOptions,
 		debounceTime: DEBOUCE_TIME,
+		tableRef,
 	});
 
 	useEffect(() => {
@@ -148,7 +160,9 @@ export const Table = (props: TableProps) => {
 			data={categoriesData}
 			loading={loading}
 			debouncedSearchTime={DEBOUCE_TIME}
+			ref={tableRef}
 			options={{
+				filter: false,
 				serverSide: true,
 				searchText: filterState.search as any,
 				page: filterState.pagination.page - 1,
@@ -156,7 +170,7 @@ export const Table = (props: TableProps) => {
 				rowsPerPageOptions,
 				count: totalRecords,
 				customToolbar: () => (
-					<FilterResetButton handleClick={filterManager.resetSearch} />
+					<FilterResetButton handleClick={filterManager.resetFilter} />
 				),
 				onSearchChange: filterManager.changeSearch,
 				onChangePage: filterManager.changePage,

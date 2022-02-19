@@ -22,7 +22,6 @@ export default class HttpResource {
 		if (options && options.queryParams) {
 			config.params = options.queryParams;
 		}
-		console.log(options, config);
 		return this.http.get<T>(this.resource, config);
 	};
 

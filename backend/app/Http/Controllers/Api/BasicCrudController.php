@@ -10,7 +10,7 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 
 abstract class BasicCrudController extends Controller
 {
-    protected $defaultPerPage = 5;
+    protected $defaultPerPage = 10;
 
     protected abstract function model();
     protected abstract function resource();

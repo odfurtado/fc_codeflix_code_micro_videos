@@ -14,7 +14,14 @@ export interface TableColumn extends MUIDataTableColumn {
 	width?: string;
 }
 
-interface TableProps extends MUIDataTableProps {
+export interface MuiDataTableRefComponent {
+	changePage: (page: number) => void;
+	changeRowsPerPage: (rowsPerPage: number) => void;
+}
+
+interface TableProps
+	extends MUIDataTableProps,
+		React.RefAttributes<MuiDataTableRefComponent> {
 	columns: TableColumn[];
 	loading?: boolean;
 	debouncedSearchTime?: number;
@@ -77,74 +84,81 @@ const makeDefaultOptions = (
 	},
 });
 
-const Table: React.FC<TableProps> = (props) => {
-	const extractMuiDataTableColumns = (
-		columns: TableColumn[]
-	): MUIDataTableColumn[] => {
-		setColumnsWidth(columns);
-		return columns.map((column) => omit(column, 'width'));
-	};
-
-	const setColumnsWidth = (columns: TableColumn[]) => {
-		columns.forEach((column, key) => {
-			if (column.width) {
-				const overrides = theme.overrides as any;
-
-				overrides.MUIDataTableHeadCell.fixedHeaderCommon[
-					`&:nth-child(${key + 2})`
-				] = {
-					width: column.width,
-				};
-			}
-		});
-	};
-
-	const removeActionPadding = () => {
-		const selector = `&[data-testid^="MuiDataTableBodyCell-${
-			props.columns.length - 1
-		}"]`;
-		(theme.overrides as any).MUIDataTableBodyCell.root[selector] = {
-			paddingTop: '0px',
-			paddingBottom: '0px',
+const Table = React.forwardRef<MuiDataTableRefComponent, TableProps>(
+	(props, ref) => {
+		const extractMuiDataTableColumns = (
+			columns: TableColumn[]
+		): MUIDataTableColumn[] => {
+			setColumnsWidth(columns);
+			return columns.map((column) => omit(column, 'width'));
 		};
-	};
 
-	const applyLoading = () => {
-		const textLabels = (newProps.options as any).textLabels;
-		textLabels.body.noMatch =
-			props.loading === true
-				? 'Carregando registros...'
-				: textLabels.body.noMatch;
-	};
-	const applyResponsive = () => {
-		newProps.options.responsive = isSmOrDown ? 'scrollMaxHeight' : 'stacked';
-	};
+		const setColumnsWidth = (columns: TableColumn[]) => {
+			columns.forEach((column, key) => {
+				if (column.width) {
+					const overrides = theme.overrides as any;
 
-	const getOriginalMuiDataTablesProps = () => {
-		return omit(newProps, 'loading');
-	};
+					overrides.MUIDataTableHeadCell.fixedHeaderCommon[
+						`&:nth-child(${key + 2})`
+					] = {
+						width: column.width,
+					};
+				}
+			});
+		};
 
-	const theme = cloneDeep<Theme>(useTheme());
-	removeActionPadding();
-	const isSmOrDown = useMediaQuery(theme.breakpoints.down('sm'));
+		const removeActionPadding = () => {
+			const selector = `&[data-testid^="MuiDataTableBodyCell-${
+				props.columns.length - 1
+			}"]`;
+			(theme.overrides as any).MUIDataTableBodyCell.root[selector] = {
+				paddingTop: '0px',
+				paddingBottom: '0px',
+			};
+		};
 
-	const newProps = merge(
-		{ options: cloneDeep(makeDefaultOptions(props.debouncedSearchTime)) },
-		props,
-		{
-			columns: extractMuiDataTableColumns(props.columns),
-		}
-	);
+		const applyLoading = () => {
+			const textLabels = (newProps.options as any).textLabels;
+			textLabels.body.noMatch =
+				props.loading === true
+					? 'Carregando registros...'
+					: textLabels.body.noMatch;
+		};
+		const applyResponsive = () => {
+			newProps.options.responsive = isSmOrDown
+				? 'scrollMaxHeight'
+				: 'stacked';
+		};
 
-	applyLoading();
-	applyResponsive();
-	const originalProps = getOriginalMuiDataTablesProps();
+		const getOriginalMuiDataTablesProps = () => {
+			return {
+				...omit(newProps, 'loading'),
+				ref,
+			};
+		};
 
-	return (
-		<MuiThemeProvider theme={theme}>
-			<MUIDataTable {...originalProps}></MUIDataTable>
-		</MuiThemeProvider>
-	);
-};
+		const theme = cloneDeep<Theme>(useTheme());
+		removeActionPadding();
+		const isSmOrDown = useMediaQuery(theme.breakpoints.down('sm'));
+
+		const newProps = merge(
+			{ options: cloneDeep(makeDefaultOptions(props.debouncedSearchTime)) },
+			props,
+			{
+				columns: extractMuiDataTableColumns(props.columns),
+			}
+		);
+
+		applyLoading();
+		applyResponsive();
+		const originalProps = getOriginalMuiDataTablesProps();
+
+		return (
+			<MuiThemeProvider theme={theme}>
+				<MUIDataTable {...originalProps}></MUIDataTable>
+			</MuiThemeProvider>
+		);
+	}
+);
 
 export default Table;

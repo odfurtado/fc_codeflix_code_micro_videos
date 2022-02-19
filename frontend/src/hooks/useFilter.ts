@@ -89,7 +89,6 @@ export class FilterManager {
 	}
 
 	resetTablePagination = () => {
-		console.log('resetTablePagination: ', this.tableRef.current);
 		this.tableRef.current.changeRowsPerPage(this.rowsPerPage);
 		this.tableRef.current.changePage(0);
 	};

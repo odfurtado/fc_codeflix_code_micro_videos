@@ -43,7 +43,7 @@ const columnsDefinition: TableColumn[] = [
 			},
 			filterType: 'multiselect',
 			filterOptions: {
-				names: ['Loading...'],
+				names: [],
 			},
 		},
 	},
@@ -264,9 +264,6 @@ export const Table = (props: TableProps) => {
 				onColumnSortChange: filterManager.changeColumnSort,
 				onFilterChange: (column, filterList, type) => {
 					const columnIndex = columns.findIndex((c) => c.name === column);
-					console.log({
-						[column]: filterList[columnIndex],
-					});
 					filterManager.changeExtraFilter({
 						[column]: filterList[columnIndex],
 					});
